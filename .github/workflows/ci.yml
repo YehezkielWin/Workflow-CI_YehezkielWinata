@@ -20,28 +20,28 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 3. Install semua dependensi pendukung
+    # 3. Install semua dependensi pendukung langsung di lingkungan Runner
     - name: Install Dependencies
       run: |
         pip install mlflow==2.14.1 dagshub>=0.30.0 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model ke Cloud DagsHub
+    # 4. Jalankan Re-training Model (Masuk ke dalam folder proyek terlebih dahulu)
+    # Ini mencegah MLflow CLI kebingungan mencari letak berkas namadataset_preprocessing
     - name: Run MLflow Project Re-training
+      working-directory: ./MLProject_Folder
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        mlflow run MLProject_Folder --no-conda
+        mlflow run . --no-conda
 
     # 5. Generate Dockerfile dari Model Menggunakan Fungsi Resmi MLflow (Syarat Advance)
-    # Ini memenuhi syarat kriteria "menggunakan fungsi mlflow build-docker" untuk membuat blueprint kontainer
     - name: Generate Docker Setup via MLflow
       env:
         MLFLOW_TRACKING_URI: "https://dagshub.com/yehezkiel.winata06/SMSML_YEHEZKIELWINATA.mlflow"
         MLFLOW_TRACKING_USERNAME: "yehezkiel.winata06"
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Menggunakan perintah resmi mlflow untuk mempersiapkan folder Docker lokal
         mlflow models generate-dockerfile -m "models:/baseline_model/1" -d ./docker_output
 
     # 6. Login ke akun Docker Hub Anda menggunakan GitHub Secrets
@@ -51,7 +51,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 7. Build dan Push Docker Image Menggunakan GitHub Docker Builder (Anti-Exit Code 2)
+    # 7. Build dan Push Docker Image Menggunakan GitHub Docker Builder
     - name: Build and Push Docker Image to Docker Hub
       uses: docker/build-push-action@v5
       with:
