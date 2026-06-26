@@ -1,22 +1,19 @@
 # modelling.py
 import os
 import pandas as pd
-import dagshub
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score
 
 def run_modelling():
     print("--- Memulai Pelatihan Otomatis via GitHub Actions CI ---")
     
-    # Cukup panggil kosongan seperti ini. 
-    # DagsHub otomatis membaca token dari Environment Variable DAGSHUB_CLIENT_TOKEN di server
-    dagshub.init(
-        repo_owner='yehezkiel.winata06', 
-        repo_name='SMSML_YEHEZKIELWINATA', 
-        mlflow=True
-    )
+    # Ambil URL tracking dari environment variable secara dinamis
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+    if tracking_uri:
+        mlflow.set_tracking_uri(tracking_uri)
+        print(f"[INFO] Tracking URI disetel ke: {tracking_uri}")
     
     mlflow.set_experiment("Credit_Card_Basic_Experiment")
     
