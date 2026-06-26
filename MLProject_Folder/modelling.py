@@ -10,12 +10,23 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 def run_modelling():
     print("--- Memulai Pelatihan Otomatis via GitHub Actions CI ---")
     
-    # Inisialisasi DagsHub menggunakan Environment Variables yang aman di GitHub Secrets
-    dagshub.init(
-        repo_owner='yehezkiel.winata06', 
-        repo_name='SMSML_YEHEZKIELWINATA', 
-        mlflow=True
-    )
+    # Membaca token dari GitHub Secrets secara otomatis agar tidak meminta konfirmasi login interaktif
+    dagshub_token = os.getenv("DAGSHUB_TOKEN")
+    if dagshub_token:
+        # Jika berjalan di server GitHub Actions, gunakan token langsung
+        dagshub.init(
+            repo_owner='yehezkiel.winata06', 
+            repo_name='SMSML_YEHEZKIELWINATA', 
+            mlflow=True,
+            token=dagshub_token
+        )
+    else:
+        # Jika berjalan di komputer lokal (fallback)
+        dagshub.init(
+            repo_owner='yehezkiel.winata06', 
+            repo_name='SMSML_YEHEZKIELWINATA', 
+            mlflow=True
+        )
     
     mlflow.set_experiment("Credit_Card_Basic_Experiment")
     
