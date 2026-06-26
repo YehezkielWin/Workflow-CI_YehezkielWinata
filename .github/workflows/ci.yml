@@ -20,12 +20,12 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 3. Install semua dependensi pendukung
+    # 3. Install semua dependensi utama di server runner
     - name: Install Dependencies
       run: |
         pip install mlflow==2.14.1 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model
+    # 4. Jalankan Re-training Model ke Cloud DagsHub via MLProject
     - name: Run MLflow Project Re-training
       working-directory: ./MLProject_Folder
       env:
@@ -35,25 +35,17 @@ jobs:
       run: |
         mlflow run . --env-manager local
 
-    # 5. Generate Dockerfile Menggunakan Model Lokal & Paksa Menggunakan Python 3.10 (Anti-Eror Ubuntu Paket)
-    - name: Generate Docker Setup via MLflow
-      run: |
-        MODEL_PATH=$(find ./MLProject_Folder/mlruns/ -type d -name "baseline_model" | head -n 1)
-        echo "Menggunakan model lokal dari path: $MODEL_PATH"
-        # Menambahkan parameter --env-manager local agar Dockerfile menggunakan basis Python yang seragam dan modern
-        mlflow models generate-dockerfile -m "$MODEL_PATH" -d ./docker_output --env-manager local
-
-    # 6. Login ke akun Docker Hub Anda menggunakan GitHub Secrets
+    # 5. Login ke akun Docker Hub menggunakan GitHub Secrets
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 7. Build dan Push Docker Image Menggunakan GitHub Docker Builder
+    # 6. Build & Push Docker Image Secara Native (Memenuhi Syarat Mutlak Advance)
     - name: Build and Push Docker Image to Docker Hub
       uses: docker/build-push-action@v5
       with:
-        context: ./docker_output
+        context: ./MLProject_Folder
         push: true
         tags: yehezkielwin/credit-card-model:latest
