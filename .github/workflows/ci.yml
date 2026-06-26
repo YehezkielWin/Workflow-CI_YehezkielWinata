@@ -1,0 +1,52 @@
+name: Machine Learning CI Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ml_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout kode dari repositori GitHub
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Setup Lingkungan Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-state: '3.10'
+
+    # 3. Install Dependensi Utama untuk Trigger MLProject
+    - name: Install MLflow & DagsHub
+      run: |
+        pip install mlflow dagshub pandas scikit-learn
+
+    # 4. Hubungkan Autentikasi DagsHub via token GitHub Secrets
+    - name: Run MLflow Project Re-training
+      env:
+        DAGSHUB_USERNAME: "yehezkiel.winata06"
+        DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+      run: |
+        # Menjalankan otomatisasi training lewat instruksi MLProject
+        mlflow run MLProject_Folder --no-conda
+
+    # 5. Build Docker Image Menggunakan Fungsi Bawaan MLflow (Syarat Advance)
+    - name: Build Docker Image via MLflow
+      run: |
+        mlflow models build-docker -m "runs:/${{ steps.train.outputs.run_id }}/baseline_model" -n "yehezkielwinata06/credit-card-model:latest" --enable-mlflow-deployment
+
+    # 6. Login ke Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # 7. Push Docker Image ke Docker Hub Resmi (Syarat Advance)
+    - name: Push Docker Image to Docker Hub
+      run: |
+        docker push yehezkielwinata06/credit-card-model:latest
