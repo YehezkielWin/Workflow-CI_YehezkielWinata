@@ -25,14 +25,14 @@ jobs:
       run: |
         pip install mlflow==2.14.1 dagshub>=0.30.0 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model (Menggunakan argumen env-manager resmi terbaru)
+   # 4. Jalankan Re-training Model (Menggunakan Token Lingkungan Sistem Resmi)
     - name: Run MLflow Project Re-training
       working-directory: ./MLProject_Folder
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+        DAGSHUB_CLIENT_TOKEN: ${{ secrets.DAGSHUB_TOKEN }} # Ini kuncinya!
       run: |
-        # Mengganti flag usang --no-conda dengan standar baru --env-manager local
         mlflow run . --env-manager local
 
     # 5. Generate Dockerfile dari Model Menggunakan Fungsi Resmi MLflow (Syarat Advance)
