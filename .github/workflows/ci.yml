@@ -25,15 +25,15 @@ jobs:
       run: |
         pip install mlflow==2.14.1 dagshub>=0.30.0 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model (Masuk ke dalam folder proyek terlebih dahulu)
-    # Ini mencegah MLflow CLI kebingungan mencari letak berkas namadataset_preprocessing
+    # 4. Jalankan Re-training Model (Menggunakan argumen env-manager resmi terbaru)
     - name: Run MLflow Project Re-training
       working-directory: ./MLProject_Folder
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        mlflow run . --no-conda
+        # Mengganti flag usang --no-conda dengan standar baru --env-manager local
+        mlflow run . --env-manager local
 
     # 5. Generate Dockerfile dari Model Menggunakan Fungsi Resmi MLflow (Syarat Advance)
     - name: Generate Docker Setup via MLflow
