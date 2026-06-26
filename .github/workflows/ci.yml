@@ -10,23 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Ambil kode dari repositori GitHub
+    # 1. Ambil kode dari repositori GitHub menggunakan versi terbaru (Bebas Deprecate)
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    # 2. Setup Python versi stabil
+    # 2. Setup Python versi stabil menggunakan versi terbaru
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
     # 3. Install semua dependensi pendukung di server GitHub
     - name: Install Dependencies
       run: |
-        pip install mlflow dagshub pandas scikit-learn
+        pip install mlflow==2.14.1 dagshub>=0.30.0 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model (Sudah diarahkan ke MLProject_Folder Anda)
-    # Langkah ini akan membaca file MLProject, conda.yaml, dan modelling.py di dalam folder tersebut
+    # 4. Jalankan Re-training Model (Memasukkan token ke environment variabel runner)
     - name: Run MLflow Project Re-training
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
@@ -36,7 +35,7 @@ jobs:
 
     # 5. Login ke akun Docker Hub Anda menggunakan GitHub Secrets
     - name: Log in to Docker Hub
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -48,7 +47,7 @@ jobs:
         MLFLOW_TRACKING_USERNAME: "yehezkiel.winata06"
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        mlflow models build-docker -m "models:/baseline_model/latest" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
+        mlflow models build-docker -m "models:/baseline_model/1" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
 
     # 7. Push Docker Image ke Docker Hub Resmi (Syarat Mutlak Advance)
     - name: Push Docker Image to Docker Hub
