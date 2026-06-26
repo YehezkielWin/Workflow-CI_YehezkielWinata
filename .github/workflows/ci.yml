@@ -20,39 +20,37 @@ jobs:
       with:
         python-version: '3.10'
 
-    # 3. Install semua dependensi pendukung
+    # 3. Install semua dependensi pendukung di server GitHub
     - name: Install Dependencies
       run: |
         pip install mlflow dagshub pandas scikit-learn
 
-    # 4. Jalankan Re-training ke Cloud DagsHub
-    # Cari tahu nama folder MLProject kamu, sesuaikan di bagian "mlflow run ..." di bawah
+    # 4. Jalankan Re-training Model (Sudah diarahkan ke MLProject_Folder Anda)
+    # Langkah ini akan membaca file MLProject, conda.yaml, dan modelling.py di dalam folder tersebut
     - name: Run MLflow Project Re-training
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Ganti "MLProject_Folder" sesuai nama folder penampung modelling.py kamu (misal: MLProject)
         mlflow run MLProject_Folder --no-conda
 
-    # 5. Login ke Docker Hub terlebih dahulu
+    # 5. Login ke akun Docker Hub Anda menggunakan GitHub Secrets
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 6. Build Docker Image langsung menggunakan model yang terdaftar di eksperimen DagsHub
+    # 6. Build Docker Image menggunakan model baseline yang terdaftar di DagsHub
     - name: Build Docker Image via MLflow Remote
       env:
         MLFLOW_TRACKING_URI: "https://dagshub.com/yehezkiel.winata06/SMSML_YEHEZKIELWINATA.mlflow"
         MLFLOW_TRACKING_USERNAME: "yehezkiel.winata06"
         MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Menggunakan jalur tracking cloud untuk menarik model dasar yang sukses di-training tadi
         mlflow models build-docker -m "models:/baseline_model/latest" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
 
-    # 7. Push Docker Image ke Docker Hub
+    # 7. Push Docker Image ke Docker Hub Resmi (Syarat Mutlak Advance)
     - name: Push Docker Image to Docker Hub
       run: |
         docker push yehezkielwin/credit-card-model:latest
