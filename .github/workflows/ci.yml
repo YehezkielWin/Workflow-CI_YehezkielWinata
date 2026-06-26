@@ -10,45 +10,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Checkout kode dari repositori GitHub
+    # 1. Ambil kode dari repositori GitHub
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # 2. Setup Lingkungan Python
+    # 2. Setup Python versi stabil
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    # 3. Install Dependensi Utama
-    - name: Install MLflow & DagsHub
+    # 3. Install semua dependensi pendukung
+    - name: Install Dependencies
       run: |
         pip install mlflow dagshub pandas scikit-learn
 
-    # 4. Jalankan Re-training Model via MLProject
-    # Kita berikan ID step "training_step" untuk menangkap output log jika diperlukan
+    # 4. Jalankan Re-training ke Cloud DagsHub
+    # Cari tahu nama folder MLProject kamu, sesuaikan di bagian "mlflow run ..." di bawah
     - name: Run MLflow Project Re-training
-      id: training_step
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
+        # Ganti "MLProject_Folder" sesuai nama folder penampung modelling.py kamu (misal: MLProject)
         mlflow run MLProject_Folder --no-conda
 
-    # 5. Build Docker Image Menggunakan Fungsi Bawaan MLflow (Syarat Advance)
-    # Menggunakan opsi lokal model generator agar tidak bergantung pada ID Run eksternal di cloud saat build
-    - name: Build Docker Image via MLflow
-      run: |
-        mlflow models build-docker -m "MLProject_Folder/tuned_rf_model" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
-
-    # 6. Login ke Docker Hub
+    # 5. Login ke Docker Hub terlebih dahulu
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 7. Push Docker Image ke Docker Hub Resmi (Syarat Advance)
+    # 6. Build Docker Image langsung menggunakan model yang terdaftar di eksperimen DagsHub
+    - name: Build Docker Image via MLflow Remote
+      env:
+        MLFLOW_TRACKING_URI: "https://dagshub.com/yehezkiel.winata06/SMSML_YEHEZKIELWINATA.mlflow"
+        MLFLOW_TRACKING_USERNAME: "yehezkiel.winata06"
+        MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+      run: |
+        # Menggunakan jalur tracking cloud untuk menarik model dasar yang sukses di-training tadi
+        mlflow models build-docker -m "models:/baseline_model/latest" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
+
+    # 7. Push Docker Image ke Docker Hub
     - name: Push Docker Image to Docker Hub
       run: |
         docker push yehezkielwin/credit-card-model:latest
