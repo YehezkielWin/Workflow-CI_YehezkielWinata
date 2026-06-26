@@ -13,12 +13,12 @@ def run_modelling():
     # Membaca token dari GitHub Secrets secara otomatis agar tidak meminta konfirmasi login interaktif
     dagshub_token = os.getenv("DAGSHUB_TOKEN")
     if dagshub_token:
-        # Jika berjalan di server GitHub Actions, gunakan token langsung
+        # Jika berjalan di server GitHub Actions, gunakan auth_token langsung (Bukan 'token')
         dagshub.init(
             repo_owner='yehezkiel.winata06', 
             repo_name='SMSML_YEHEZKIELWINATA', 
             mlflow=True,
-            token=dagshub_token
+            auth_token=dagshub_token
         )
     else:
         # Jika berjalan di komputer lokal (fallback)
