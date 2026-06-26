@@ -25,7 +25,7 @@ jobs:
       run: |
         pip install mlflow==2.14.1 pandas==2.2.2 scikit-learn==1.5.0
 
-    # 4. Jalankan Re-training Model (Menyimpan log ke cloud DagsHub & lokal mlruns)
+    # 4. Jalankan Re-training Model
     - name: Run MLflow Project Re-training
       working-directory: ./MLProject_Folder
       env:
@@ -35,14 +35,13 @@ jobs:
       run: |
         mlflow run . --env-manager local
 
-    # 5. Generate Dockerfile Menggunakan Model Lokal Hasil Run (Garansi Anti-Resource_Not_Found)
-    # Ini 100% memenuhi kriteria "menggunakan fungsi mlflow build-docker/generate-dockerfile"
+    # 5. Generate Dockerfile Menggunakan Model Lokal & Paksa Menggunakan Python 3.10 (Anti-Eror Ubuntu Paket)
     - name: Generate Docker Setup via MLflow
       run: |
-        # Mencari folder 'baseline_model' hasil pelatihan yang baru saja selesai di dalam struktur mlruns lokal
         MODEL_PATH=$(find ./MLProject_Folder/mlruns/ -type d -name "baseline_model" | head -n 1)
         echo "Menggunakan model lokal dari path: $MODEL_PATH"
-        mlflow models generate-dockerfile -m "$MODEL_PATH" -d ./docker_output
+        # Menambahkan parameter --env-manager local agar Dockerfile menggunakan basis Python yang seragam dan modern
+        mlflow models generate-dockerfile -m "$MODEL_PATH" -d ./docker_output --env-manager local
 
     # 6. Login ke akun Docker Hub Anda menggunakan GitHub Secrets
     - name: Log in to Docker Hub
