@@ -18,26 +18,28 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-state: '3.10'
+        python-version: '3.10'
 
-    # 3. Install Dependensi Utama untuk Trigger MLProject
+    # 3. Install Dependensi Utama
     - name: Install MLflow & DagsHub
       run: |
         pip install mlflow dagshub pandas scikit-learn
 
-    # 4. Hubungkan Autentikasi DagsHub via token GitHub Secrets
+    # 4. Jalankan Re-training Model via MLProject
+    # Kita berikan ID step "training_step" untuk menangkap output log jika diperlukan
     - name: Run MLflow Project Re-training
+      id: training_step
       env:
         DAGSHUB_USERNAME: "yehezkiel.winata06"
         DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
       run: |
-        # Menjalankan otomatisasi training lewat instruksi MLProject
         mlflow run MLProject_Folder --no-conda
 
     # 5. Build Docker Image Menggunakan Fungsi Bawaan MLflow (Syarat Advance)
+    # Menggunakan opsi lokal model generator agar tidak bergantung pada ID Run eksternal di cloud saat build
     - name: Build Docker Image via MLflow
       run: |
-        mlflow models build-docker -m "runs:/${{ steps.train.outputs.run_id }}/baseline_model" -n "yehezkielwinata06/credit-card-model:latest" --enable-mlflow-deployment
+        mlflow models build-docker -m "MLProject_Folder/tuned_rf_model" -n "yehezkielwin/credit-card-model:latest" --enable-mlflow-deployment
 
     # 6. Login ke Docker Hub
     - name: Log in to Docker Hub
@@ -49,4 +51,4 @@ jobs:
     # 7. Push Docker Image ke Docker Hub Resmi (Syarat Advance)
     - name: Push Docker Image to Docker Hub
       run: |
-        docker push yehezkielwinata06/credit-card-model:latest
+        docker push yehezkielwin/credit-card-model:latest
